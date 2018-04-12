@@ -1,4 +1,4 @@
-.TH AUR\-BUILD 1 2017-07-15 AURUTILS
+.TH AUR\-BUILD 1 2018-04-12 AURUTILS
 .SH NAME
 aur\-build \- build packages to a local repository
 
@@ -60,9 +60,10 @@ database (\fBrepo\-add \-R\fR).
 
 .TP
 .B \-s
-Sign built packages and the database (\fBrepo\-add \-s\fR) with gpg.
-To use another key than the default, the \fBGPGKEY\fR environment variable can be
-set to the appopriate key identifier.
+Sign built packages (\fBmakepkg \-s\fR) and the database (\fBrepo\-add
+\-s\fR) with gpg.  To use another key than the default, the
+\fBGPGKEY\fR environment variable can be set to the appopriate key
+identifier.
 
 .TP
 .B \-v
@@ -81,8 +82,7 @@ field are ignored if the target package is installed on the local
 system.
 
 Databases are built with \fBLANG=C\fR to avoid libalpm from skipping
-entries if the locale is not set (FS#49342). Packages are signed
-manually with \fBgpg \-\-verbose \-\-detach\-sign \-\-no\-armor\fR (FS#49946).
+entries if the locale is not set (FS#49342).
 
 .SS Avoiding password prompts
 \fBmakepkg\fR(8) must be run as a regular user as of version 4.2, with

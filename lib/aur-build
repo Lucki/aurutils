@@ -7,7 +7,6 @@ readonly PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 
 # default arguments
 chroot_args=()
-gpg_args=(--detach-sign --no-armor --batch)
 makechrootpkg_args=(-cu)
 makepkg_args=(-rs --noconfirm)
 repo_add_args=()
@@ -42,7 +41,10 @@ db_replaces() {
 }
 
 find_pkg_dupes() {
-    xargs -I{} find "$1" -maxdepth 1 -name '{}*' | grep -Exv '.+(~|_namcap\.log|\.part|\.sig)$' -
+    # This function uses the extended --packagelist introduced with
+    # pacman 5.1. It assumes that PKGEXT does not change between
+    # invoking --packagelist and makepkg in the later build process.
+    makepkg --packagelist | xargs -I{} find "$1" -maxdepth 1 -name '{}'
 }
 
 trap_exit() {
@@ -131,12 +133,11 @@ if type -P xdelta3 >/dev/null; then
     repo_add_args+=(-d)
 fi
 
-if ((sign_pkg)) && [[ -v GPGKEY ]]; then
-    gpg --list-keys "$GPGKEY"
-    gpg_args+=(-u "$GPGKEY")
+if ((sign_pkg == 1)); then
+    makepkg_args+=('--sign')
 fi
 
-if ((!sign_pkg)); then
+if ((sign_pkg == 0)); then
     db_sigs=("$db_root/$database"*.sig)
   
     if [[ -f ${db_sigs[0]} ]]; then
@@ -157,7 +158,7 @@ while read -r -u "$fd" pkg _; do
     cd_safe "$startdir/$pkg"
 
     if ((!overwrite)); then
-        mapfile -t mark < <(makepkg --packagelist | find_pkg_dupes "$db_root")
+        mapfile -t mark < <(find_pkg_dupes "$db_root")
 
         if [[ ${mark[*]} ]]; then
             warning "$argv0: skipping built package (use -f to overwrite)"
@@ -182,23 +183,14 @@ while read -r -u "$fd" pkg _; do
     cd_safe "$var_tmp"
     pkglist=(./*)
 
-    if ((sign_pkg)); then
-        for p in "${pkglist[@]}"; do
-            gpg "${gpg_args[@]}" --output "$p".sig "$p"
-            mv -bf "$p" "$p".sig "$db_root"
-        done
-    else
-        mv -bf "${pkglist[@]}" "$db_root"
-    fi
+    # move build products to repository
+    mv -bf "${pkglist[@]}" "$db_root"
 
     cd_safe "$db_root"
     LANG=C repo-add "${repo_add_args[@]}" "$db_path" "${pkglist[@]}"
 
     # count a package as processed if built and added to the repo
     printf '%s\n' "$pkg" >&"$fd_done"
-
-    # fixed by: https://git.archlinux.org/pacman.git/commit/?id=c0a5884b
-    find "$startdir/$pkg" -maxdepth 1 -type l -xtype f -lname "$var_tmp*" -delete
 
     if ((chroot)) || ((no_sync)); then
         continue
