@@ -9,12 +9,13 @@ readonly machine
 
 # default arguments
 directory=/var/lib/aurbuild/$machine
+gpg_args=(--detach-sign --no-armor --batch)
 makechrootpkg_args=(-cu)
 makepkg_conf=/usr/share/devtools/makepkg-$machine.conf
 pacman_conf=/usr/share/devtools/pacman-extra.conf
 
 # default options
-prepare=1 build=1
+prepare=1 build=1 sign=0
 
 conf_options() {
     printf '[options]\n'
@@ -50,13 +51,14 @@ usage() {
     exit 1
 }
 
-while getopts :BPC:D:M: opt; do
+while getopts :BPsC:D:M: opt; do
     case $opt in
         C) pacman_conf=$OPTARG  ;;
         D) directory=$OPTARG    ;;
         M) makepkg_conf=$OPTARG ;;
         B) build=0   ;;
         P) prepare=0 ;;
+        s) sign=1    ;;
         *) usage     ;;
     esac
 done
@@ -86,6 +88,8 @@ if ((prepare)); then
 fi
 
 if ((build)); then
+    # XXX pass on required environment variables for package signing
+    # to makechrootpkg, or sign packages manually
     sudo PKGDEST="${PKGDEST:-$PWD}" makechrootpkg -r "$directory" "${makechrootpkg_args[@]}"
 else
     printf >&2 'container path: %q\n' "$directory"

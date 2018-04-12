@@ -81,9 +81,10 @@ while getopts a:d:r:C:D:M:cfNRsv opt; do
         C) chroot_args+=(-C "$OPTARG") ;;
         D) chroot_args+=(-D "$OPTARG") ;;
         M) chroot_args+=(-M "$OPTARG") ;;
-        R) repo_add_args+=(-R) ;;
-        s) repo_add_args+=(-s)
+        s) chroot_args+=(-s)
+           repo_add_args+=(-s)
            sign_pkg=1          ;;
+        R) repo_add_args+=(-R) ;;
         v) repo_add_args+=(-v) ;;
         *) usage ;;
     esac
@@ -100,7 +101,8 @@ else
 fi
 
 db_root=$(realpath -e -- "${db_root-$server}")
-db_path=$(realpath -e -- "${db_root}/$database.db") # .db symbolic link to archive
+# XXX .db symbolic link to archive
+db_path=$(realpath -e -- "${db_root}/$database.db")
 
 if ! [[ -r $db_path && -w $db_path ]]; then
     error "$argv0: $db_path: permission denied"

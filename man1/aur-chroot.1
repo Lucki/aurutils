@@ -65,9 +65,6 @@ Package conflicts inside the container must be solved manually, as
 example, to replace \fIgcc\fR with \fIgcc-multilib\fR, run \fBarch\-nspawn
 /var/lib/aurbuild/root pacman \-S gcc\-multilib\fR as root.
 
-Signature verification requires that \fBgpg2\fR(1) configuration is
-stored in \fI~/.gnupg\fR. See Github issue #151 for details.
-
 .SS Building for a different architecture
 To build packages for a different architecture, prepend \fBsetarch
 \fIarch\fR to the aurbuild command line. The target architecture must
